@@ -171,7 +171,7 @@ async function executeTaskListSequentially() {
         // Handle the error for a specific element
       }
     }
-    //sendMessage(msg);
+    sendMessage(msg);
   } catch (e) {
     console.log(e);
   } finally {
