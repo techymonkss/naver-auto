@@ -107,9 +107,10 @@ const getRank = async (searchText, siteUrl) => {
   return finalRank;
 };
 
+let initialConnectionState
 async function initailizeDb()
 {
-  let initialConnectionState = mongoose.connection.readyState;
+  initialConnectionState = mongoose.connection.readyState;
 
   if (initialConnectionState !== 1) { // not connected
     try {
