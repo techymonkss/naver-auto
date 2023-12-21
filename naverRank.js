@@ -155,7 +155,7 @@ async function executeTaskListSequentially() {
           rank: rank, // Replace with the desired rank
         });
 
-        newHistory
+        await newHistory
           .save()
           .then((result) => {
             console.log("New History inserted:", result);
