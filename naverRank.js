@@ -68,23 +68,36 @@ const checkRank = async (page, siteUrl) => {
 };
 
 const nextPage = async (page) => {
-  await page
-    .locator("#main_pack")
-    .getByRole("button", { name: "다음" })
-    .click();
+
+    try {
+      let btn = await page
+        .locator("#main_pack")
+        .getByRole("button", { name: "다음", timeout: 3000 }).click();
+
+    } catch (error) {
+      console.error("Error clicking the button:", error);
+      // Handle the error or retry logic here
+      return false;
+    }
+    return true;
 };
 
 let msg = '';
 const getRank = async (searchText, siteUrl) => {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false });
   const context = await browser.newContext();
   const page = await context.newPage();
 
   await page.goto("https://www.naver.com/");
   await page.getByPlaceholder("검색어를 입력해 주세요.").click();
   await page.getByPlaceholder("검색어를 입력해 주세요.").fill(searchText);
-  await page.getByRole("button", { name: "검색", exact: true }).click();
-  await page.getByRole("link", { name: "검색결과 더보기" }).click();
+  try{
+    await page.getByRole("button", { name: "검색", exact: true }).click();
+    await page.getByRole("link", { name: "검색결과 더보기" }).click();
+  }
+  catch(e){
+    console.log(e);
+  }
 
   let pageNo = 0;
   let finalRank = 0;
@@ -93,7 +106,8 @@ const getRank = async (searchText, siteUrl) => {
     let rank = await checkRank(page, siteUrl);
     if (rank == -1) {
       pageNo++;
-      await nextPage(page);
+      let res = await nextPage(page);
+      if(!res) pageNo = 100;
     } else {
       finalRank = pageNo * 15 + rank;
       break;
