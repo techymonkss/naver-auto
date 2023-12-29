@@ -27,16 +27,41 @@ const sendMessage = async (text) => {
 };
 
 const checkRank = async (page, siteUrl) => {
-  await page.waitForSelector(".lst_total");
+  await page.waitForLoadState('domcontentloaded');
+ 
+  await page.evaluate(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+  await page.evaluate(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
+ 
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+  await page.evaluate(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
+ 
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+  await page.evaluate(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
+ 
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+  // await page.waitForSelector(".lst_total");
   const elementsArray = await page.evaluate(() => {
     // Perform DOM operations within page.evaluate
     // Select elements that match your criteria and extract relevant data
-    const ulElement = document.querySelector("ul.lst_total");
 
-    if (ulElement) {
-      // Get all li elements within the ul
-      const liElements = ulElement.querySelectorAll("li");
-
+      // Get all div elements within 
+      const liElements = document.querySelectorAll('.thumbnail_thumb_wrap__RbcYO._wrapper');
+      const li2Elements = document.querySelectorAll('.product_mall_title__Xer1m')
+      console.log(liElements.length)
       // Array to store the final HTML content
       const liHtmlArray = [];
 
@@ -47,33 +72,60 @@ const checkRank = async (page, siteUrl) => {
 
         // Check if an anchor tag is found within the li
         if (anchorTag) {
-          // Get the data-url attribute value from the anchor tag and push it to the array
-          const dataUrl = anchorTag.getAttribute("data-url");
+          // Get the data-i attribute value from the anchor tag and push it to the array
+          const dataUrl = anchorTag.getAttribute("data-i");
           if (dataUrl) {
             liHtmlArray.push(dataUrl);
           }
         }
       });
 
+      const li2HtmlArray = [];
+      li2Elements.forEach((li) => {
+        // Get the first anchor tag within the li
+        const anchorTag = li.querySelector("a[href]");
+
+        // Check if an anchor tag is found within the li
+        if (anchorTag) {
+          // Get the data-i attribute value from the anchor tag and push it to the array
+          const dataUrl = anchorTag.getAttribute("href");
+          if (dataUrl) {
+            li2HtmlArray.push(dataUrl);
+          }
+        }
+      });
+
       // Return the array containing HTML content of the second anchor tags in li elements
-      return liHtmlArray;
-    }
+      return [liHtmlArray,li2HtmlArray];
   });
-  for (let i = 0; i < elementsArray.length; i++) {
-    if (elementsArray[i].indexOf(siteUrl) !== -1) {
+  let arr1 = elementsArray[0];
+  let arr2 = elementsArray[1];
+  for (let i = 0; i < arr1.length; i++) {
+
+    if ((siteUrl).includes(arr1[i])) {
       return i + 1;
     }
   }
+
+  for (let i = 0; i < arr2.length; i++) {
+    let params = new URLSearchParams(new URL(arr2[i]).search);
+    let desiredString = params?.get('url')?.split('/').pop();
+
+    // console.log(arr2[i],desiredString);
+    if ((siteUrl).includes(desiredString)) {
+      return i + 1;
+    }
+  }
+  
   return -1;
 };
 
 const nextPage = async (page) => {
 
     try {
-      let btn = await page
-        .locator("#main_pack")
-        .getByRole("button", { name: "다음", timeout: 3000 }).click();
-
+      await page.getByRole('link', { name: '다음', timeout: 3000 }).click();
+      
+      await new Promise((resolve) => setTimeout(resolve, 2_000)); 
     } catch (error) {
       console.error("Error clicking the button:", error);
       // Handle the error or retry logic here
@@ -88,28 +140,32 @@ const getRank = async (searchText, siteUrl) => {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  await page.goto("https://www.naver.com/");
-  await page.getByPlaceholder("검색어를 입력해 주세요.").click();
-  await page.getByPlaceholder("검색어를 입력해 주세요.").fill(searchText);
-  try{
-    await page.getByRole("button", { name: "검색", exact: true }).click();
-    await page.getByRole("link", { name: "검색결과 더보기" }).click();
-  }
-  catch(e){
-    console.log(e);
-  }
+  // await page.pause();
+
+  await page.goto('https://shopping.naver.com/home');
+  await page.getByRole('textbox', { name: '검색어 입력' }).click();
+  await page.getByRole('textbox', { name: '검색어 입력' }).fill(searchText);
+  await page.getByRole('button', { name: '네이버쇼핑 검색' }).click();
+
+  // try{
+  //   await page.getByRole("button", { name: "검색", exact: true }).click();
+  //   await page.getByRole("link", { name: "검색결과 더보기" }).click();
+  // }
+  // catch(e){
+  //   console.log(e);
+  // }
 
   let pageNo = 0;
   let finalRank = 0;
 
-  while (pageNo < 8) {
+  while (pageNo < 3) {
     let rank = await checkRank(page, siteUrl);
     if (rank == -1) {
       pageNo++;
       let res = await nextPage(page);
       if(!res) pageNo = 100;
     } else {
-      finalRank = pageNo * 15 + rank;
+      finalRank = pageNo * 50 + rank;
       break;
     }
   }
@@ -146,9 +202,10 @@ async function executeTaskListSequentially() {
   try {
     await initailizeDb();
 
-    const documents = await Ranking.find({});
-
+    const documents = await Ranking.find({ "category": "nshop" });
+    // console.log("total nshop" + documents);
     msg = "";
+    // console.log(await getRank('고추가루','https://smartstore.naver.com/hoya1378/products/11660032732'));
     for (const ele of documents) {
       try {
         let rank = await getRank(ele.keywords, ele.url);
@@ -190,7 +247,7 @@ async function executeTaskListSequentially() {
   } catch (e) {
     console.log(e);
   } finally {
-    // Close the connection if it was initially closed
+    // Close the confnection if it was initially closed
     if (initialConnectionState !== 1) {
       await mongoose.connection.close();
       console.log("Database connection closed");

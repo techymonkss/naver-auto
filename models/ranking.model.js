@@ -6,24 +6,43 @@ const rankingSchema = mongoose.Schema(
     createdBy: {
       type: mongoose.Types.ObjectId,
       ref: 'User',
-      index: true
+      index: true,
     },
     url: {
       type: String,
-      required: true
+      required: true,
     },
     keywords: {
       type: String,
-      required: true
+      required: true,
     },
     rank: {
       type: Number,
-      required: true
+      required: true,
+      default: 0,
     },
     active: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    trackingRequested: {
+      type: Boolean,
+      default: false,
+    },
+    trackingStatus: {
+      type: String,
+      enum: ['REQUESTED', 'DONE'],
+    },
+    slot1: Number,
+    slot2: Number,
+    mid1: String,
+    mid2: String,
+    expiresOn: Date,
+    requestMessage: String,
   },
   {
     timestamps: true,
