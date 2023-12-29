@@ -158,7 +158,7 @@ const getRank = async (searchText, siteUrl) => {
   let pageNo = 0;
   let finalRank = 0;
 
-  while (pageNo < 3) {
+  while (pageNo < 8) {
     let rank = await checkRank(page, siteUrl);
     if (rank == -1) {
       pageNo++;
