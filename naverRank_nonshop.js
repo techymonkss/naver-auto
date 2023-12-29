@@ -84,7 +84,7 @@ const nextPage = async (page) => {
 
 let msg = '';
 const getRank = async (searchText, siteUrl) => {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
 
