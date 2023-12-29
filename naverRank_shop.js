@@ -259,7 +259,7 @@ executeTaskListSequentially();
 
 // Schedule the cron job
 cron.schedule(
-  "0 6,18 * * *",
+  "0 7,19 * * *",
   () => {
     executeTaskListSequentially();
   },
