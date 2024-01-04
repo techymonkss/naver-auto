@@ -21,6 +21,9 @@ const rankingSchema = mongoose.Schema(
       required: true,
       default: 0,
     },
+    prevRank: {
+      type: Number
+    },
     active: {
       type: Boolean,
       default: true,
