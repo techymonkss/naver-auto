@@ -152,7 +152,7 @@ async function executeTaskListSequentially() {
     for (const ele of documents) {
       try {
         let rank = await getRank(ele.keywords, ele.url);
-
+        sendMessage('Rank Check for ' + ele.keywords + ' url:' + ele.url + 'is : ' + rank);
         //update Ranking Table
         let updateData = await Ranking.updateOne(
           { _id: ele._id },
@@ -186,6 +186,7 @@ async function executeTaskListSequentially() {
         // Handle the error for a specific element
       }
     }
+    sendMessage('Automatic Rank Check For Site is completed.');
     sendMessage(msg);
   } catch (e) {
     console.log(e);
