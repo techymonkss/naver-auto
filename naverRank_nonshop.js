@@ -159,6 +159,7 @@ async function executeTaskListSequentially() {
           {
             $set: {
               rank: rank,
+              prevRank: ele.rank 
             },
           }
         );
