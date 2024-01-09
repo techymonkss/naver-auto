@@ -204,7 +204,7 @@ async function executeTaskListSequentially() {
     }
     sendMessage("Automatic Rank Check For Site is completed.");
   } catch (e) {
-    console.log(e);
+    console.log('automation error:' + e);
   } finally {
     // Close the connection if it was initially closed
     if (initialConnectionState !== 1) {
