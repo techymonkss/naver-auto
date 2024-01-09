@@ -4,19 +4,19 @@ chromium.use(stealth);
 const axios = require("axios");
 const cron = require("node-cron");
 const mongoose = require("mongoose");
-const { History , Ranking } = require('./models');
+const { History , Ranking , User } = require('./models');
 
+const MONGODB_URL =
+  "mongodb+srv://admin:vgxVuFLaF2PUw4zP@cluster0.r8rb0ar.mongodb.net/naverdev";
+const BOT_TOKEN = "6440113170:AAHjQntyJSl5o7eCMPoolThAzNAzXbTOFKw"; // Replace with your Bot token from BotFather
+const CHANNEL_CHAT_ID = "-1001929837998"; // Replace with your channel's chat ID
 
-const MONGODB_URL= "mongodb+srv://admin:vgxVuFLaF2PUw4zP@cluster0.r8rb0ar.mongodb.net/naverdev";
-const BOT_TOKEN = "6664775756:AAGjZdsR6OmIQeaBvQS5IzExdY8rT07BrJ0"; // Replace with your Bot token from BotFather
-const CHANNEL_CHAT_ID = "-4022041614"; // Replace with your channel's chat ID
-
-const sendMessage = async (text) => {
+const sendMessage = async (text,chatId) => {
   try {
     const response = await axios.post(
       `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
       {
-        chat_id: CHANNEL_CHAT_ID,
+        chat_id: chatId ? chatId : CHANNEL_CHAT_ID,
         text: text,
         parse_mode: "html",
       }
@@ -184,10 +184,7 @@ async function initailizeDb()
 
   if (initialConnectionState !== 1) { // not connected
     try {
-      await mongoose.connect(MONGODB_URL, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
+      await mongoose.connect(MONGODB_URL);
       console.log("Database connected");
     } catch (error) {
       console.error("Database connection error:", error);
@@ -203,9 +200,9 @@ async function executeTaskListSequentially() {
     await initailizeDb();
 
     const documents = await Ranking.find({ "category": "nshop" });
-    // console.log("total nshop" + documents);
+
     msg = "";
-    // console.log(await getRank('고추가루','https://smartstore.naver.com/hoya1378/products/11660032732'));
+
     for (const ele of documents) {
       try {
         let rank = await getRank(ele.keywords, ele.url);
@@ -221,6 +218,27 @@ async function executeTaskListSequentially() {
           }
         );
 
+        const diff = ele.rank - rank;
+        const rankMsg =
+          "Rank Check for " +
+          ele.keywords +
+          " url:" +
+          ele.url +
+          ": " +
+          rank +
+          " (" +
+          (diff == 0 ? "No Change" : diff > 0 ? "+" + diff : diff) +
+          ")";
+
+        sendMessage(rankMsg);
+
+        const getOwnerForEntry = await User.findOne({_id: ele.createdBy });
+        
+        if (getOwnerForEntry.telegramUUID && diff !== 0) {
+          sendMessage(rankMsg, getOwnerForEntry.telegramUUID);
+          console.log("Sent the message to" + getOwnerForEntry.telegramId);
+        }
+
         //add record to history
         const newHistory = new History({
           ranking: ele._id, // Replace with an actual Ranking ID
@@ -230,23 +248,22 @@ async function executeTaskListSequentially() {
         await newHistory
           .save()
           .then((result) => {
-            console.log("New History inserted:", result);
+            // console.log("New History inserted:", result);
           })
           .catch((err) => {
-            console.error("Error inserting History:", err);
+            console.error("Error inserting History:" + err);
           });
       } catch (err) {
-        console.log("whole crash handle Error occurred:", err);
+        console.log("some issue checking rank pls contact dev for entry:" + err);
         sendMessage(
-          "some issue checking rank pls contact dev for entry",
-          ele.keywords + ele.url
+          "some issue checking rank pls contact dev for entry" + ele.keywords + ele.url
         );
         // Handle the error for a specific element
       }
     }
-    sendMessage(msg);
+    sendMessage('Automatic Rank Check For Shop is now completed.');
   } catch (e) {
-    console.log(e);
+    console.log('automation error:' + e);
   } finally {
     // Close the confnection if it was initially closed
     if (initialConnectionState !== 1) {
